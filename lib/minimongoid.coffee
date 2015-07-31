@@ -6,7 +6,7 @@ class @Minimongoid
   errors: false
   # attr: {}
 
-  # --- instance methods 
+  # --- instance methods
   constructor: (attr = {}, parent = null) ->
     if attr._id
       if @constructor._object_id
@@ -17,14 +17,14 @@ class @Minimongoid
     @initAttrsAndRelations(attr, parent)
 
   # this function sets up all of the attributes to be stored on the model as well as
-  # setting up the relation methods 
+  # setting up the relation methods
   initAttrsAndRelations: (attr = {}, parent = null) ->
-    # initialize relation arrays to be an empty array, if they don't exist 
+    # initialize relation arrays to be an empty array, if they don't exist
     for habtm in @constructor.has_and_belongs_to_many
       # e.g. matchup.game_ids = []
       identifier = "#{_.singularize(habtm.name)}_ids"
       @[identifier] ||= []
-    # initialize relation arrays to be an empty array, if they don't exist 
+    # initialize relation arrays to be an empty array, if they don't exist
     for embeds_many in @constructor.embeds_many
       @[embeds_many.name] ||= []
 
@@ -32,13 +32,13 @@ class @Minimongoid
       @[@constructor.embedded_in] = parent
 
 
-    # load in all the passed attrs 
+    # load in all the passed attrs
     for name, value of attr
       continue if name.match(/^_id/)
       if name.match(/_id$/) and (value instanceof Meteor.Collection.ObjectID)
         @[name] = value._str
       else if (embeds_many = _.findWhere(@constructor.embeds_many, {name: name}))
-        # initialize a model with the appropriate attributes 
+        # initialize a model with the appropriate attributes
         # also pass "self" along as the parent model
         class_name = embeds_many.class_name || _.classify(_.singularize(name))
         @[name] = global[class_name].modelize(value, @)
@@ -61,7 +61,7 @@ class @Minimongoid
 
       @[relation] = do(relation, identifier, class_name) ->
         (options = {}) ->
-          # if we have a relation_id 
+          # if we have a relation_id
           if global[class_name] and self[identifier]
             return global[class_name].find self[identifier], options
           else
@@ -116,24 +116,24 @@ class @Minimongoid
 
 
   # /--------------------
-  # DEPRECATED: r() and related() methods 
+  # DEPRECATED: r() and related() methods
   # --------------------
 
   # alias to @related
   r: (relation) ->
     @related(relation)
 
-  # look up related models 
+  # look up related models
   related: (relation, options = {}) ->
     # self = @
-    # is it a belongs_to? 
+    # is it a belongs_to?
     for belongs_to in @constructor.belongs_to
       if relation == belongs_to.name
         identifier = "#{belongs_to.name}_id"
         # set up default class name, e.g. "belongs_to: user" ==> 'User'
         unless belongs_to.class_name
           belongs_to.class_name = _.titleize belongs_to.name
-        # if we have a relation_id 
+        # if we have a relation_id
         if @[identifier]
           return global[belongs_to.class_name].find @[identifier], options
         else
@@ -181,7 +181,7 @@ class @Minimongoid
     obj[field] = message
     @errors.push obj
 
-  isValid: (attr = {}) -> 
+  isValid: (attr = {}) ->
     @validate()
     not @errors
 
@@ -202,12 +202,12 @@ class @Minimongoid
     return @ if not @isValid()
 
     # attr['_type'] = @constructor._type if @constructor._type?
-    
+
     if @id?
       @constructor._collection.update @id, { $set: attr }
     else
       @id = @_id = @constructor._collection.insert attr
-    
+
     if @constructor.after_save
       @constructor.after_save(@)
 
@@ -217,10 +217,10 @@ class @Minimongoid
     @save(attr)
 
   # push to mongo array field
-  push: (data) -> 
+  push: (data) ->
     # TODO: should maybe do something like this; but it should know if we're pushing an embedded model and instantiate it...
-    # for name, value of data 
-    #   # update locally 
+    # for name, value of data
+    #   # update locally
     #   @[name].push value
 
     # addToSet to ensure uniqueness -- can't think of if/when we WOULDN'T want that??
@@ -243,6 +243,9 @@ class @Minimongoid
   reload: ->
     if @id?
       @constructor.find(@id)
+
+  inc: (data) ->
+    @constructor._collection.update @id, {$inc: data}
 
   # --- class variables
   @_object_id: false
@@ -334,7 +337,7 @@ class @Minimongoid
           else if selector._id['$in']
             # _.map(game_ids, function(x) { return new Meteor.Collection.ObjectID(x) })
             selector._id['$in'] = _.map_object_id selector._id['$in']
-        if selector and selector._ids 
+        if selector and selector._ids
           selector._ids = _.map(selector._ids, (id) -> new Meteor.Collection.ObjectID id)
 
       @_collection.find selector, options
@@ -347,7 +350,7 @@ class @Minimongoid
     @_collection.remove(selector)
 
 
-  # run a model init on all items in the collection 
+  # run a model init on all items in the collection
   # -- somewhat deprecated -- used to be used in @where function, which is replaced by the transform inside of @find
   @modelize: (cursor, parent = null) ->
     self = @
@@ -355,7 +358,7 @@ class @Minimongoid
     Relation.new self, models...
 
 
-# for some reason underscore.inflection stopped working with Meteor 0.6.5. 
+# for some reason underscore.inflection stopped working with Meteor 0.6.5.
 # so for now we just use this simple singularize method instead of including the library
 _.singularize = (s) ->
   s = s.replace /s$/, ""
